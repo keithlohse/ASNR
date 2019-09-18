@@ -1,0 +1,1463 @@
+# Austrian-US Ski Development Study
+# By Brady DeCouto
+# Loading the essential libraries. 
+library("ggplot2"); library("lme4"); library("car"); 
+library("dplyr"); library("ez"); library("reshape2"); 
+library("lmerTest"); library("corrplot")
+
+
+##------------------------- Overall Analyses -----------------------------------
+## Setting the Directory -------------------------------------------------------
+getwd()
+setwd("C:/Users/u1214829/Box/Ski Research/Papers (Scripts, Worksheets, Manuscripts)/Austrian Paper/Austrian_Analysis")
+list.files()
+
+# Import the .csv file into R.
+
+#Combined Static Spreadsheet
+STATIC<-read.csv("./data_STATIC_COMBINED.CSV", header = TRUE, sep=",",  
+              na.strings=c("NA","NaN"," ",""))
+#Austrian and US Performance Subsets
+TECH<-read.csv("./data_TECH_CLEAN_Combined.csv", header = TRUE, sep=",",  
+               na.strings=c("NA","NaN"," ",""))
+
+SPD<-read.csv("./data_SPD_CLEAN_Combined.csv", header = TRUE, sep=",",  
+               na.strings=c("NA","NaN"," ",""))
+#All Hours Data
+TRIM<-read.csv("./data_ALL_TRIM_COMBINED.csv", header = TRUE, sep=",",  
+              na.strings=c("NA","NaN"," ",""))
+#Austrian and US Performance Subsets for hours
+TRIM_P2<-read.csv("./data_TRIM_PERF.csv", header = TRUE, sep=",",  
+              na.strings=c("NA","NaN"," ",""))
+#Injury dataset
+INJ<-read.csv("./data_INJ_COMBINED.csv", header = TRUE, sep=",",  
+              na.strings=c("NA","NaN"," ",""))
+#All US athletes and Austrian performance subset
+SpeedP1<-read.csv("./data_SPD_Phase1.csv", header = TRUE, sep=",",  
+               na.strings=c("NA","NaN"," ",""))
+
+TechP1<-read.csv("./data_TECH_Phase1.csv", header = TRUE, sep=",",  
+               na.strings=c("NA","NaN"," ",""))
+#only Austrian and U.S. data
+STATIC_AUS<-read.csv("./Austrian_data_static.csv", header = TRUE, sep=",",  
+               na.strings=c("NA","NaN"," ",""))
+
+STATIC_USA<-read.csv("./data_STATIC_US.csv", header = TRUE, sep=",",  
+               na.strings=c("NA","NaN"," ",""))
+
+
+
+
+#Phase 1 of Analysis 
+
+#Technical Performance Trend
+
+tech1 <- lmer(FIS_TECH~
+                # Fixed-effects
+                1+year2019*Country+
+                Rel_Age+Gender+
+                # Random-effects
+                (1|subID), data=TechP1, REML=FALSE)
+
+summary(tech1)
+
+#Speed Performance Trend
+
+spd1 <- lmer(FIS_SPD~
+                # Fixed-effects
+                1+year2019*Country+
+                Rel_Age+Gender+
+                # Random-effects
+                (1|subID), data=SpeedP1, REML=FALSE)
+
+summary(spd1)
+
+#Total Hours Trend
+
+summary(TRIM$Competition)
+quantile(TRIM$Competition, 0.95, na.rm=TRUE)
+TRIM_COMP<-subset(TRIM, Competition <= 3.096) # Impose Upper Limit
+TRIM_COMP<-subset(TRIM_COMP, Competition > 0)
+
+m_Comp <-lmer(Competition~
+                # Fixed-effects
+                1+(year2018+year2018.sq+year2018.cu)*Gender*Country+
+                Rel_Age+
+                # Random-effects
+                (1|subID), data=TRIM_COMP, REML=FALSE)
+
+summary(m_Comp)
+
+
+qqnorm(resid(m_Comp))
+plot(fitted(m_Comp), abs(resid(m_Comp)/sd(resid(m_Comp))))
+
+# Play Model
+summary(TRIM$Play)
+quantile(TRIM$Play, 0.95, na.rm=TRUE)
+TRIM_PLAY<-subset(TRIM, Play <= 2.58) # Impose Upper Limit
+TRIM_PLAY<-subset(TRIM_PLAY, Play > 0)
+
+m_Play <-lmer(Play~
+                # Fixed-effects
+                1+(year2018+year2018.sq+year2018.cu)*Gender*Country+
+                Rel_Age+
+                # Random-effects
+                (1|subID), data=TRIM_PLAY, REML=FALSE)
+
+summary(m_Play)
+
+
+qqnorm(resid(m_Play))
+plot(fitted(m_Play), abs(resid(m_Play)/sd(resid(m_Play))))
+
+
+
+
+head(INJ)
+
+
+
+tech_coach_group<-lmer(FIS_TECH~
+                         # Fixed-effects
+                         1+Rel_Age+year2019*Coach_Gro*Country+Coach_Gro.c+
+                         # Random-effects
+                         (1|subID), data=TECH, REML=FALSE)
+
+summary(tech_coach_group)
+
+## Effect of coach-led 0to0 hours on NAT_TECH points 
+tech_Coach_0to0<-lmer(FIS_TECH~
+                        # Fixed-effects
+                        1+Rel_Age+year2019*Coach_OtoO*Country+Coach_OtoO.c+
+                        # Random-effects
+                        (1|subID), data=TECH, REML=FALSE)
+
+summary(tech_Coach_0to0)
+
+## Effect of individual hours on NAT_TECH points 
+
+tech_Individual<-lmer(FIS_TECH~
+                        # Fixed-effects
+                        1+Rel_Age+year2019*Individual*Country+Individual.c+
+                        # Random-effects
+                        (1|subID), data=TECH, REML=FALSE)
+
+summary(tech_Individual)
+
+
+## Effect of competition hours on NAT_TECH points 
+
+tech_Competition<-lmer(FIS_TECH~
+                         # Fixed-effects
+                         1+Rel_Age+year2019*Competition*Country+Competition.c+
+                         # Random-effects
+                         (1|subID), data=TECH, REML=FALSE)
+
+summary(tech_Competition)
+
+
+## Effect of indirect hours on NAT_TECH points 
+
+tech_Indirect<-lmer(FIS_TECH~
+                      # Fixed-effects
+                      1+Rel_Age+year2019*Indirect*Country+Indirect.c+
+                      # Random-effects
+                      (1|subID), data=TECH, REML=FALSE)
+
+summary(tech_Indirect)
+
+
+## Effect of play hours on NAT_TECH points 
+
+tech_Play<-lmer(FIS_TECH~
+                  # Fixed-effects
+                  1+Rel_Age+year2019*Play*Country+Play.c+
+                  # Random-effects
+                  (1|subID), data=TECH, REML=FALSE)
+
+summary(tech_Play)
+
+#Speed by hours-----------
+
+tech_coach_group<-lmer(FIS_SPD~
+                         # Fixed-effects
+                         1+Rel_Age+year2019*Coach_Gro*Country+Coach_Gro.c+
+                         # Random-effects
+                         (1|subID), data=SPD, REML=FALSE)
+
+summary(tech_coach_group)
+
+## Effect of coach-led 0to0 hours on NAT_TECH points 
+tech_Coach_0to0<-lmer(FIS_SPD~
+                        # Fixed-effects
+                        1+Rel_Age+year2019*Coach_OtoO*Country+Coach_OtoO.c+
+                        # Random-effects
+                        (1|subID), data=SPD, REML=FALSE)
+
+summary(tech_Coach_0to0)
+
+## Effect of individual hours on NAT_TECH points 
+
+tech_Individual<-lmer(FIS_SPD~
+                        # Fixed-effects
+                        1+Rel_Age+year2019*Individual*Country+Individual.c+
+                        # Random-effects
+                        (1|subID), data=SPD, REML=FALSE)
+
+summary(tech_Individual)
+
+
+## Effect of competition hours on NAT_TECH points 
+
+tech_Competition<-lmer(FIS_SPD~
+                         # Fixed-effects
+                         1+Rel_Age+year2019*Competition*Country+Competition.c+
+                         # Random-effects
+                         (1|subID), data=SPD, REML=FALSE)
+
+summary(tech_Competition)
+
+
+## Effect of indirect hours on NAT_TECH points 
+
+tech_Indirect<-lmer(FIS_SPD~
+                      # Fixed-effects
+                      1+Rel_Age+year2019*Indirect*Country+Indirect.c+
+                      # Random-effects
+                      (1|subID), data=SPD, REML=FALSE)
+
+summary(tech_Indirect)
+
+
+## Effect of play hours on NAT_TECH points 
+
+tech_Play<-lmer(FIS_SPD~
+                  # Fixed-effects
+                  1+Rel_Age+year2019*Play*Country+Play.c+
+                  # Random-effects
+                  (1|subID), data=SPD, REML=FALSE)
+
+summary(tech_Play)
+
+## Performance and Other Sports/Milestones------------ 
+head(TECH)
+
+tech_sport_01<-lmer(FIS_TECH~
+                      # Fixed-effects
+                      1+Rel_Age+mean_HOURS_TOTAL+
+                      year2019*total_other_sport*Country+
+                      # Random-effects
+                      (1|subID), data=TECH, REML=FALSE)
+
+summary(tech_sport_01)            
+
+tech_sport_01<-lmer(FIS_SPD~
+                      # Fixed-effects
+                      1+Rel_Age+mean_HOURS_TOTAL+
+                      year2019*total_other_sport*Country+
+                      # Random-effects
+                      (1|subID), data=SPD, REML=FALSE)
+
+summary(tech_sport_01)
+
+
+
+tech_sport_01<-lmer(FIS_TECH~
+                      # Fixed-effects
+                      1+Rel_Age+mean_HOURS_TOTAL+
+                      year2019+year2019.sq*age_engagement*Country+
+                      # Random-effects
+                      (1|subID), data=TECH, REML=FALSE)
+
+summary(tech_sport_01)
+
+tech_sport_01<-lmer(FIS_TECH~
+                      # Fixed-effects
+                      1+Rel_Age+mean_HOURS_TOTAL+
+                      year2019*age_supervision*Country+
+                      # Random-effects
+                      (1|subID), data=TECH, REML=FALSE)
+
+summary(tech_sport_01)
+
+tech_sport_01<-lmer(FIS_TECH~
+                      # Fixed-effects
+                      1+Rel_Age+mean_HOURS_TOTAL+
+                      year2019*first_comp*Country+
+                      # Random-effects
+                      (1|subID), data=TECH, REML=FALSE)
+
+summary(tech_sport_01)
+
+tech_sport_01<-lmer(FIS_TECH~
+                      # Fixed-effects
+                      1+Rel_Age+mean_HOURS_TOTAL+
+                      year2019*first_non_ski_training*Country+
+                      # Random-effects
+                      (1|subID), data=TECH, REML=FALSE)
+
+summary(tech_sport_01)
+
+
+tech_sport_01<-lmer(FIS_SPD~
+                      # Fixed-effects
+                      1+Rel_Age+mean_HOURS_TOTAL+
+                      year2019*age_engagement*Country+
+                      # Random-effects
+                      (1|subID), data=SPD, REML=FALSE)
+
+summary(tech_sport_01)
+
+tech_sport_01<-lmer(FIS_SPD~
+                      # Fixed-effects
+                      1+Rel_Age+mean_HOURS_TOTAL+
+                      year2019*age_supervision*Country+
+                      # Random-effects
+                      (1|subID), data=SPD, REML=FALSE)
+
+summary(tech_sport_01)
+
+tech_sport_01<-lmer(FIS_SPD~
+                      # Fixed-effects
+                      1+Rel_Age+mean_HOURS_TOTAL+
+                      year2019*first_comp*Country+
+                      # Random-effects
+                      (1|subID), data=SPD, REML=FALSE)
+
+summary(tech_sport_01)
+
+tech_sport_01<-lmer(FIS_SPD~
+                      # Fixed-effects
+                      1+Rel_Age+mean_HOURS_TOTAL+
+                      year2019*first_non_ski_training*Country+
+                      # Random-effects
+                      (1|subID), data=SPD, REML=FALSE)
+
+summary(tech_sport_01)
+
+
+mean(Age_2018~Country, data=STATIC)
+            
+#Section 2
+            
+#Hours Engaged in Practice Over Time-------
+        
+      
+  #Hours trends over time 
+        
+         Hours <-lmer(HOURS_TOTAL~
+        # Fixed-effects
+          1+(year2018+year2018.sq+year2018.cu)*Gender*Country+
+          Rel_Age+
+          # Random-effects
+          (1+year2018|subID), data=TRIM, REML=FALSE)
+
+        summary(Hours)   
+        
+      
+        head(TRIM)
+    #Data Visualization for hours finding
+        #Austrian
+        TRIM_G <- subset(TRIM, !is.na(Gender))
+        levels(TRIM_G$Country) <- c("Austria", "United States")
+        
+        g1<-ggplot(TRIM_G)+
+          geom_smooth(method = "loess", color = "black",  width = 2, size = 2, mapping =  aes(x = Year, y = HOURS_TOTAL, linetype = Gender), se = FALSE)+
+          facet_wrap(~Country, nrow = 1, ncol = 2)
+        g2<-g1+scale_x_continuous(name = "Years", breaks = c(2002,2010,2018)) +
+          scale_y_continuous(name = "Yearly Total Hours (in 100s of Hours)")
+        g3 <- g2 + theme_bw() + 
+          theme(axis.text=element_text(size=18, colour="black"), 
+                axis.title=element_text(size=23,face="bold"),
+                strip.text = element_text(size = 30)) +
+          theme(strip.text.x = element_text(size = 23))+
+          theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
+          theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 15)))+
+          theme(axis.title.x = element_text(margin = margin(t = 15, r = 0, b = 10, l = 0)))+
+          theme(legend.position = c(0.9,0.1))+
+          theme(legend.title = element_blank())+
+          theme(legend.text = element_text(size = 21))+
+          theme(plot.title = element_blank())+
+          theme(panel.spacing = unit(4, "lines"))
+        g4 <- g3+scale_linetype_discrete(name=element_blank(),
+                                         labels = c("Female",
+                                                    "Male"))         
+        
+        plot(g4)
+     
+     #Performance Trend for Tech Performance   
+        g1<-ggplot(TECH)+
+          geom_smooth(method = "lm", color = "black",  width = 2, size = 2, mapping =  aes(x = Year, y = FIS_TECH, linetype = Country), se = FALSE)
+        g2<-g1+scale_x_continuous(name = "Years", breaks = c(2016,2017,2018, 2019)) +
+          coord_cartesian(xlim=c(2016,2019))+
+          scale_y_continuous(name = "Technical Performance Pts (Lower Better)")
+        g3 <- g2 + theme_bw() + 
+          theme(axis.text=element_text(size=22, colour="black"), 
+                axis.title=element_text(size=23,face="bold"),
+                strip.text = element_text(size = 30)) +
+          theme(strip.text.x = element_text(size = 23))+
+          theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
+          theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 15)))+
+          theme(axis.title.x = element_text(margin = margin(t = 15, r = 0, b = 10, l = 0)))+
+          theme(legend.position = c(0.9,0.9))+
+          theme(legend.title = element_blank())+
+          theme(legend.text = element_text(size = 23))+
+          theme(plot.title = element_blank())+
+          theme(panel.spacing = unit(4, "lines"))
+        g4 <- g3+scale_linetype_discrete(name=element_blank(),
+                                         labels = c("Austria",
+                                                    "U.S."))         
+        
+        plot(g4)
+        
+        #Performance Trend for Speed eprformance
+        g1<-ggplot(SPD)+
+          geom_smooth(method = "lm", color = "black",  width = 2, size = 2, mapping =  aes(x = Year, y = FIS_SPD, linetype = Country), se = FALSE)
+        g2<-g1+scale_x_continuous(name = "Years", breaks = c(2016,2017,2018, 2019)) +
+          coord_cartesian(xlim=c(2016,2019))+
+          scale_y_continuous(name = "Speed Performance Pts (Lower Better)")
+        g3 <- g2 + theme_bw() + 
+          theme(axis.text=element_text(size=22, colour="black"), 
+                axis.title=element_text(size=23,face="bold"),
+                strip.text = element_text(size = 30)) +
+          theme(strip.text.x = element_text(size = 23))+
+          theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
+          theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 15)))+
+          theme(axis.title.x = element_text(margin = margin(t = 15, r = 0, b = 10, l = 0)))+
+          theme(legend.position = c(0.9,0.9))+
+          theme(legend.title = element_blank())+
+          theme(legend.text = element_text(size = 21))+
+          theme(plot.title = element_blank())+
+          theme(panel.spacing = unit(4, "lines"))
+        g4 <- g3+scale_linetype_discrete(name=element_blank(),
+                                         labels = c("Austria",
+                                                    "U.S."))         
+        
+        plot(g4)
+        
+      #Analyzing different practice forms over time
+        #Austrian All Hours
+     
+        plot(density(TRIM_COMP$Competition, na.rm=TRUE))
+        
+        summary(TRIM$Competition)
+        quantile(TRIM$Coach_OtoO, 0.95, na.rm=TRUE)
+        TRIM_COMP<-subset(TRIM, Competition <= 3)
+        
+        m_Comp <-lmer(Competition~
+                        # Fixed-effects
+                        1+(year2018+year2018.sq+year2018.cu)*Gender*Country+
+                        Rel_Age+
+                        # Random-effects
+                        (1|subID), data=TRIM_COMP, REML=FALSE)
+        
+        summary(m_Comp)
+        
+        
+        qqnorm(resid(m_1on1))
+        
+         m_Play <-lmer(Play~
+                           # Fixed-effects
+                         1+(year2018+year2018.sq+year2018.cu)*Gender*Country+
+                         Rel_Age+
+                           # Random-effects
+                           (1+year2018|subID), data=TRIM_COMP, REML=FALSE)
+      
+        summary(m_Play) 
+        
+  
+         
+        m_Individual <-lmer(Individual~
+                        # Fixed-effects
+                          1+(year2018+year2018.sq+year2018.cu)*Gender*Country+
+                          Rel_Age+
+                        # Random-effects
+                        (1+year2018|subID), data=TRIM, REML=FALSE)
+        
+        summary(m_Individual)
+        
+       
+    #US skiers spend more time inthis practice over time; US males spend less time in individual practice. When these interactions are teased out in
+    #individual countries, US shows no gender effect while Austrian males show an increased amount of hours
+        
+       #F.
+         m_Group <-lmer(Coach_Gro~
+                              # Fixed-effects
+                          1+(year2018+year2018.sq+year2018.cu)*Gender*Country+
+                          # Random-effects
+                              (1+year2018|subID), data=TRIM, REML=FALSE)
+        
+        summary(m_Group)
+        
+        
+        
+        #G. 
+        
+        m_1on1 <-lmer(Coach_OtoO~
+                         # Fixed-effects
+                        1+(year2018+year2018.sq+year2018.cu)*Gender*Country+
+                        # Random-effects
+                         (1+year2018|subID), data=TRIM, REML=FALSE)
+        
+        summary(m_1on1)
+        
+        
+        m_Group <-lmer(Indirect~
+                         # Fixed-effects
+                         1+(year2018+year2018.sq+year2018.cu)*Gender*Country+
+                         # Random-effects
+                         (1+year2018|subID), data=TRIM, REML=FALSE)
+        
+        summary(m_Group)
+        
+        
+        
+        
+        #----------------------------------------Psych differences country----------------------------------------------
+        #Use Phase 1 working directory
+        STATIC<-read.csv("./data_STATIC_COMBINED.csv", header = TRUE, sep=",",  
+                         na.strings=c("NA","NaN"," ",""))
+        
+        
+        
+       
+      #-----------------------------------------Hours and Psych-------------------------------------------
+        head(STATIC)
+        
+        #Exploratory graphs for teasing out interactions between time and country
+        
+        g1<-ggplot(STATIC)+
+          geom_smooth(method = "lm", mapping =  aes(x = CFQ_Problem.Focused, y = Indirect, linetype = Gender), se = FALSE)+
+          facet_wrap(~Country, nrow = 1, ncol = 3)
+        g2<-g1+scale_x_continuous(name = "psych", breaks = c(30,35,40,45,50)) +
+          scale_y_continuous(name = "Hours")
+        g3 <- g2 + theme_bw() + 
+          theme(axis.text=element_text(size=14, colour="black"), 
+                axis.title=element_text(size=14,face="bold")) +
+          theme(strip.text.x = element_text(size = 18))+
+          theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
+          theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 15)))+
+          theme(axis.title.x = element_text(margin = margin(t = 15, r = 0, b = 10, l = 0)))+
+          theme(legend.position = c(0.9,0.1))+
+          theme(legend.title = element_blank())+
+          theme(legend.text = element_text(size = 10))+
+          theme(plot.title = element_blank())+
+          theme(panel.spacing = unit(1, "lines"))
+        g4 <- g3+scale_linetype_discrete(name=element_blank(),
+                                         labels = c("Female",
+                                                    "Male"))         
+        
+        plot(g4)
+        
+        h1 <- ggplot(data = STATIC)+
+          geom_smooth(method = "lm", size = 1.5, mapping = aes(x = MPS_CoachPressure, y=Coach_1on1, linetype = Country), color = "black", se = FALSE)
+        h2 <- h1+  scale_x_continuous(name = "Coach Pressure", breaks = c(1,2,3,4,5))+
+          coord_cartesian(xlim=c(1.8,4.2))+
+          scale_y_continuous(name = "Mean Hrs/Yr of 1-on-1 Practice")
+        
+        h3 <- h2 + theme_bw() + 
+          theme(axis.text=element_text(size=23, colour="black"), 
+                axis.title=element_text(size=23,face="bold")) +
+          theme(strip.text.x = element_text(size = 21))+
+          theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
+          theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 15)))+
+          theme(axis.title.x = element_text(margin = margin(t = 15, r = 0, b = 10, l = 0)))+
+          theme(legend.position = c(0.76,0.9))+
+          theme(legend.title = element_blank())+
+          theme(legend.text = element_text(size = 23))+
+          theme(plot.title = element_blank())
+        h4 <- h3+scale_linetype_discrete(name=element_blank(),
+                                         labels = c("Austrian",
+                                                    "US"))     
+        
+        
+        plot(h4) 
+        
+        
+        h1 <- ggplot(data = STATIC)+
+          geom_smooth(method = "lm", size = 1.5, mapping = aes(x = ABQ_Emotional_Physical_Exhaustion, y=Coach_1on1, linetype = Country), color = "black", se = FALSE)
+        h2 <- h1+  scale_x_continuous(name = "Emotional/Physical Exhaustion", breaks = c(1, 2,3,4,5))+
+          coord_cartesian(xlim=c(1.8,4.2))+
+          scale_y_continuous(name = "Mean Hrs/Yr of 1-on-1 Practice")
+        
+        h3 <- h2 + theme_bw() + 
+          theme(axis.text=element_text(size=23, colour="black"), 
+                axis.title=element_text(size=23,face="bold")) +
+          theme(strip.text.x = element_text(size = 21))+
+          theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
+          theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 15)))+
+          theme(axis.title.x = element_text(margin = margin(t = 15, r = 0, b = 10, l = 0)))+
+          theme(legend.position = c(0.76,0.9))+
+          theme(legend.title = element_blank())+
+          theme(legend.text = element_text(size = 23))+
+          theme(plot.title = element_blank())
+        h4 <- h3+scale_linetype_discrete(name=element_blank(),
+                                         labels = c("Austrian",
+                                                    "US"))     
+        
+        
+        plot(h4) 
+        head(STATIC)
+        
+        
+        
+        
+        h1 <- ggplot(data = STATIC)+
+          geom_smooth(method = "lm", size = 1.5, mapping = aes(x = ABQ_emotion_physical_exhaustion, y=Total_Inj), color = "black", se = FALSE)+
+          geom_jitter(mapping = aes(x = ABQ_emotion_physical_exhaustion, y=Total_Inj))
+        h2 <- h1+  scale_x_continuous(name = "Emotional/Physical Exhaustion", breaks = c(1,2,3,4,5))+
+          coord_cartesian(xlim=c(1.6,4.4))+
+          scale_y_continuous(name = "Total Injuries")
+        
+        h3 <- h2 + theme_bw() + 
+          theme(axis.text=element_text(size=20, colour="black"), 
+                axis.title=element_text(size=20,face="bold")) +
+          theme(strip.text.x = element_text(size = 18))+
+          theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
+          theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 15)))+
+          theme(axis.title.x = element_text(margin = margin(t = 15, r = 0, b = 10, l = 0)))+
+          theme(legend.position = c(0.8,0.9))+
+          theme(legend.title = element_blank())+
+          theme(legend.text = element_text(size = 20))+
+          theme(plot.title = element_blank())
+        h4 <- h3+scale_linetype_discrete(name=element_blank(),
+                                         labels = c("Austrian",
+                                                    "US"))     
+        
+        
+        plot(h4) 
+        head(STATIC)
+       
+        
+        #Hours and psych *Using the subsets
+        STATIC<-read.csv("./STATIC_SUBSETS.csv", header = TRUE, sep=",",  
+                         na.strings=c("NA","NaN"," ",""))
+        #Grit
+        mod1 <-lm(Grit~
+                  Rel_Age+Gender+Country*(Coach_Gro+Coach_1on1+Competition+Individual+Play+Indirect),
+                  data=STATIC)
+        
+        summary(mod1)
+        
+        #Mental Toughness
+        mod1 <-lm(SMTQ_total~
+                    Rel_Age+Gender+Country*(Coach_Gro+Coach_1on1+Competition+Individual+Play+Indirect),
+                  data=STATIC)
+        
+        summary(mod1)     
+        
+        mod1 <-lm(SMTQ_Confidence~
+                    Rel_Age+Gender+Country*(Coach_Gro+Coach_1on1+Competition+Individual+Play+Indirect),
+                  data=STATIC)
+        
+        summary(mod1)
+        
+        mod1 <-lm(SMTQ_Constancy~
+                    Rel_Age+Gender+Country*(Coach_Gro+Coach_1on1+Competition+Individual+Play+Indirect),
+                  data=STATIC)
+        
+        summary(mod1)
+        
+        mod1 <-lm(SMTQ_Control~
+                    Rel_Age+Gender+Country*(Coach_Gro+Coach_1on1+Competition+Individual+Play+Indirect),
+                  data=STATIC)
+        
+        summary(mod1)
+        
+
+        
+        #Perfectionism
+
+        mod1 <-lm(MPS_PersonalStandards~
+                    Rel_Age+Gender+Country*(Coach_Gro+Coach_1on1+Competition+Individual+Play+Indirect),
+                  data=STATIC)
+        
+        summary(mod1)     
+        
+        mod1 <-lm(MPS_ConcernMistakes~
+                    Rel_Age+Gender+Country*(Coach_Gro+Coach_1on1+Competition+Individual+Play+Indirect),
+                  data=STATIC)
+        
+        summary(mod1)
+        
+        mod1 <-lm(MPS_CoachPressure~
+                    Rel_Age+Gender+Country*(Coach_Gro+Coach_1on1+Competition+Individual+Play+Indirect),
+                  data=STATIC)
+        
+        summary(mod1)
+        
+        mod1 <-lm(MPS_ParentalPressure~
+                    Rel_Age+Gender+Country*(Coach_Gro+Coach_1on1+Competition+Individual+Play+Indirect),
+                  data=STATIC)
+        
+        summary(mod1)
+        
+        mod1 <-lm(MPS_DoubtsActions~
+                    Rel_Age+Gender+Country*(Coach_Gro+Coach_1on1+Competition+Individual+Play+Indirect),
+                  data=STATIC)
+        
+        summary(mod1)     
+        
+        mod1 <-lm(MPS_Organization~
+                    Rel_Age+Gender+Country*(Coach_Gro+Coach_1on1+Competition+Individual+Play+Indirect),
+                  data=STATIC)
+        
+        summary(mod1)
+        
+        
+        #Coping
+        mod1 <-lm(CFQ_Problem.Focused~
+                    Rel_Age+Gender+Country*(Coach_Gro+Coach_1on1+Competition+Individual+Play+Indirect),
+                  data=STATIC)
+        
+        summary(mod1)     
+        
+        mod1 <-lm(CFQ_Emotion.Focused~
+                    Rel_Age+Gender+Country*(Coach_Gro+Coach_1on1+Competition+Individual+Play+Indirect),
+                  data=STATIC)
+        
+        summary(mod1)
+        
+        mod1 <-lm(CFQ_Avoidance.Coping~
+                    Rel_Age+Gender+Country*(Coach_Gro+Coach_1on1+Competition+Individual+Play+Indirect),
+                  data=STATIC)
+        
+        summary(mod1)
+        
+        
+        #Burnout
+        mod1 <-lm(ABQ_reduced_sense_accomplishment~
+                    Rel_Age+Gender+Country*(Coach_Gro+Coach_1on1+Competition+Individual+Play+Indirect),
+                  data=STATIC)
+        
+        summary(mod1)     
+        
+        mod1 <-lm(ABQ_emotion_physical_exhaustion~
+                    Rel_Age+Gender+Country*(Coach_Gro+Coach_1on1+Competition+Individual+Play+Indirect),
+                  data=STATIC)
+        
+        summary(mod1)
+        
+        mod1 <-lm(ABQ_Devaluation~
+                    Rel_Age+Gender+Country*(Coach_Gro+Coach_1on1+Competition+Individual+Play+Indirect),
+                  data=STATIC)
+        
+        summary(mod1)    
+        
+       
+   
+ ####----------------------------------------Injury Analyses----------------------------------------------  
+               head(STATIC)
+        INJ<-read.csv("./data_INJ_COMBINED.csv", header = TRUE, sep=",",  
+                       na.strings=c("NA","NaN"," ",""))
+        head(INJ)
+               # Creating Centered versions of the Years Variable
+               INJ$year2018<-INJ$Year-2018
+               summary(INJ$year2018)
+
+              
+               #Injury cumulative comparison counting non-injured participants
+               t.test(inj_weeks_career~Country, data=STATIC)
+               
+               #Injury cumulative comparison excluding non-injured participants
+               t.test(Total_Inj~Country, data=STATIC)
+               
+               # Creating Centered versions of the Years Variable to visualize country data
+               INJ$year2018<-INJ$Year-2018
+               INJ$year2018.sq<-INJ$year2018^2
+               INJ$year2018.cu<-INJ$year2018^3
+               
+               
+               # Confirming there are no NAs or 0's in Injury_Weeks
+               summary(as.factor(INJ$Injury_Weeks))
+               
+               plot(density(INJ$Injury_Weeks))
+               plot(density(log10(INJ$Injury_Weeks+1)))
+               
+               # Creating a binary variable for injury for combined spreadsheet:
+               INJ$Injury_binom<-as.numeric(INJ$Injury_Weeks > 0)
+               summary(as.factor(INJ$Injury_binom))
+               
+               ## Effects of Time ----
+               mI_1<-glmer(Injury_binom~
+                           # Fixed-effects
+                           1+(year2018+year2018.sq)*Country*Gender+Rel_Age+
+                           # Random-effects
+                           (1|subID), family=binomial, data=INJ)
+               
+               summary(mI_1)
+               
+
+               
+               # Because the quadratic and cubic do not really explain additional variance,
+               # we can move forward just controlling for the linear effect, year2018
+               
+               # Injury by Hours ------------------------------------------------------------
+               # Total Hours (Exlcuding Indirect Hours) ----
+               Inj01<-glmer(Injury_binom~
+                              # Fixed-effects
+                              1+(year2018+year2018.sq)*Country*mean_HOURS_TOTAL+Rel_Age+HOURS_TOTAL.c+
+                              # Random-effects
+                              (1|subID), family=binomial, data=INJ)
+               
+               summary(Inj01)
+               
+               #Hours don't affect injury occurence significantly in both populations
+               
+               
+               Inj02<-glmer(Injury_binom~
+                              # Fixed-effects
+                              1+(year2018+year2018.sq)*Country*mean_Indirect+Rel_Age+Indirect.c+
+                              # Random-effects
+                              (1|subID), family=binomial, data=INJ)
+               
+               summary(Inj02)
+               
+               Inj02<-glmer(Injury_binom~
+                              # Fixed-effects
+                              1+(year2018+year2018.sq)*Country*mean_Coach_OtoO+Rel_Age+Coach_OtoO.c+
+                              # Random-effects
+                              (1|subID), family=binomial, data=INJ)
+               head(INJ)
+               summary(Inj02)
+               
+               Inj02<-glmer(Injury_binom~
+                              # Fixed-effects
+                              1+(year2018+year2018.sq)*Country*mean_Coach_Gro+Rel_Age+Coach_Gro.c+
+                              # Random-effects
+                              (1|subID), family=binomial, data=INJ)
+               
+               summary(Inj02)
+               
+               Inj02<-glmer(Injury_binom~
+                              # Fixed-effects
+                              1+(year2018+year2018.sq)*Country*mean_Individual+Rel_Age+Individual.c+
+                              # Random-effects
+                              (1|subID), family=binomial, data=INJ)
+               
+               summary(Inj02)
+               
+               Inj02<-glmer(Injury_binom~
+                              # Fixed-effects
+                              1+(year2018+year2018.sq)*Country*mean_Competition+Rel_Age+Competition.c+
+                              # Random-effects
+                              (1|subID), family=binomial, data=INJ)
+               
+               summary(Inj02)
+               
+               #More indirect exposure for US skiers reduces injury occurence increase over time. Need to test burnout to see this is because of engagement
+               
+               
+               # Plot to show the results of Total Time on Injury_Weeks by Country
+               summary(INJ$HOURS_TOTAL.c)
+               
+               h1 <- ggplot(data = INJ, mapping = aes(x = Year, y = Injury_binom, linetype = Country, na.rm = TRUE))+
+                 geom_smooth(method = "loess", color = "black", size = 2, se = FALSE)+
+                 ggtitle(element_blank())
+               h2 <- h1+  scale_x_continuous(name = "Years", breaks=c(2002,2006,2010,2014,2018))+
+                 scale_y_continuous(name = "Total Weeks Missed Due to Injury")
+               h3 <- h2 + theme_bw() + 
+                 theme(axis.text=element_text(size=24, colour="black"), 
+                       axis.title=element_text(size=24,face="bold")) +
+                 theme(strip.text.x = element_text(size = 23))+
+                 theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
+                 theme(axis.title.y = element_text(margin = margin(t = 0, r = 30, b = 0, l = 15)))+
+                 theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 10, l = 0)))+
+                 theme(legend.text = element_text(size = 23))+
+                 theme(legend.title = element_blank())+
+                 theme(legend.position = c(0.20,0.9))+
+                 scale_linetype_discrete(name = element_blank(),
+                                         labels = c("Austria",
+                                                    "United States"))+
+                 scale_color_manual(values = c("1" = "black",
+                                               "2" = "black"))
+                 
+               
+               plot(h3)
+               
+               write.csv(INJ, "./BSINJ.csv")
+               Inj_Prop<-read.csv("./BSINJ.csv", header = TRUE, sep=",",  
+                              na.strings=c("NA","NaN"," ",""))
+               
+               h1 <- ggplot(data = Inj_Prop, mapping = aes(x = Year, y = Inj_Prop, linetype = Country, na.rm = TRUE))+
+                 geom_smooth(method = "loess", color = "black", size = 2, se = FALSE)+
+                 ggtitle(element_blank())
+               h2 <- h1+  scale_x_continuous(name = "Years", breaks=c(2002,2006,2010,2014,2018))+
+                 scale_y_continuous(name = "Proportion of Injured/Total Athletes")
+               h3 <- h2 + theme_bw() + 
+                 theme(axis.text=element_text(size=24, colour="black"), 
+                       axis.title=element_text(size=24,face="bold")) +
+                 theme(strip.text.x = element_text(size = 23))+
+                 theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
+                 theme(axis.title.y = element_text(margin = margin(t = 0, r = 30, b = 0, l = 15)))+
+                 theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 10, l = 0)))+
+                 theme(legend.text = element_text(size = 23))+
+                 theme(legend.title = element_blank())+
+                 theme(legend.position = c(0.20,0.9))+
+                 scale_linetype_discrete(name = element_blank(),
+                                         labels = c("Austria",
+                                                    "United States"))+
+                 scale_color_manual(values = c("1" = "black",
+                                               "2" = "black"))
+               
+               plot(h3)
+               
+               
+#------------------------------------------------Psych and Injury---------------------------------------------
+head(STATIC_AUS)
+               
+head(STATIC)
+INJ_MOD<-lm(Total_Inj~Age_2018+Gender+Country*first_non_ski_training, data=STATIC)
+               
+summary(INJ_MOD)
+               
+cor.test(STATIC_AUS$Total_Inj, STATIC_AUS$other_sports_13to18)
+               cor.test(STATIC_USA$Total_Inj, STATIC_USA$total_other_sport)
+               
+               cor.test(STATIC_AUS$Total_Inj, STATIC_AUS$first_non_ski_training)
+               cor.test(STATIC_USA$Total_Inj, STATIC_USA$first_non_ski_training)
+               
+               
+               #grit
+               cor.test(STATIC_AUS$Total_Inj, STATIC_AUS$Grit)
+               cor.test(STATIC_USA$Total_Inj, STATIC_USA$Grit)
+               
+               
+               #Mental Toughness
+               cor.test(STATIC_AUS$Total_Inj, STATIC_AUS$SMTQ_total)
+               cor.test(STATIC_USA$Total_Inj, STATIC_USA$SMTQ_total)
+               
+               cor.test(STATIC_AUS$Total_Inj, STATIC_AUS$SMTQ_Confidence)
+               cor.test(STATIC_USA$Total_Inj, STATIC_USA$SMTQ_Confidence)
+               
+               cor.test(STATIC_AUS$Total_Inj, STATIC_AUS$SMTQ_Constancy)
+               cor.test(STATIC_USA$Total_Inj, STATIC_USA$SMTQ_Constancy)
+               
+               cor.test(STATIC_AUS$Total_Inj, STATIC_AUS$SMTQ_Control)
+               cor.test(STATIC_USA$Total_Inj, STATIC_USA$SMTQ_Control)
+               
+               #Perfectionism
+               cor.test(STATIC_AUS$Total_Inj, STATIC_AUS$MPS_PersonalStandards)
+               cor.test(STATIC_USA$Total_Inj, STATIC_USA$MPS_PersonalStandards)
+               
+               cor.test(STATIC_AUS$Total_Inj, STATIC_AUS$MPS_ConcernMistakes)
+               cor.test(STATIC_USA$Total_Inj, STATIC_USA$MPS_ConcernMistakes)
+               
+               cor.test(STATIC_AUS$Total_Inj, STATIC_AUS$MPS_ParentalPressure)
+               cor.test(STATIC_USA$Total_Inj, STATIC_USA$MPS_ParentalPressure)
+               
+               cor.test(STATIC_AUS$Total_Inj, STATIC_AUS$MPS_CoachPressure)
+               cor.test(STATIC_USA$Total_Inj, STATIC_USA$MPS_CoachPressure)
+               
+               cor.test(STATIC_AUS$Total_Inj, STATIC_AUS$MPS_DoubtsActions)
+               cor.test(STATIC_USA$Total_Inj, STATIC_USA$MPS_DoubtsActions)
+               
+               cor.test(STATIC_AUS$Total_Inj, STATIC_AUS$MPS_Organization)
+               cor.test(STATIC_USA$Total_Inj, STATIC_USA$MPS_Organization)
+               
+               
+               #Coping
+               cor.test(STATIC_AUS$Total_Inj, STATIC_AUS$CFQ_Problem.Focused)
+               cor.test(STATIC_USA$Total_Inj, STATIC_USA$CFQ_Problem.Focused)
+               
+               cor.test(STATIC_AUS$Total_Inj, STATIC_AUS$CFQ_Emotion.Focused)
+               cor.test(STATIC_USA$Total_Inj, STATIC_USA$CFQ_Emotion.Focused)
+               
+               cor.test(STATIC_AUS$Total_Inj, STATIC_AUS$CFQ_Avoidance.Coping)
+               cor.test(STATIC_USA$Total_Inj, STATIC_USA$CFQ_Avoidance.Coping)
+               
+               #Burnout
+               cor.test(STATIC_AUS$Total_Inj, STATIC_AUS$ABQ_reduced_sense_accomplishment)
+               cor.test(STATIC_USA$Total_Inj, STATIC_USA$ABQ_reduced_sense_accomplishment)
+               
+               cor.test(STATIC_AUS$Total_Inj, STATIC_AUS$ABQ_emotion_physical_exhaustion)
+               cor.test(STATIC_USA$Total_Inj, STATIC_USA$ABQ_emotion_physical_exhaustion)
+               
+               cor.test(STATIC_AUS$Total_Inj, STATIC_AUS$ABQ_Devaluation)
+               cor.test(STATIC_USA$Total_Inj, STATIC_USA$ABQ_Devaluation)
+               
+               #Graph for Grit and Injury
+               head(INJ)
+               h1 <- ggplot(data = INJ, mapping = aes(x = Year, y = Injury_Weeks, linetype = Grit > 3.5, color = Country, na.rm = TRUE))+
+                 geom_smooth(method = "lm",size = 2, se = FALSE)+
+                 ggtitle(element_blank())
+               h2 <- h1+  scale_x_continuous(name = "Years", breaks=c(2002,2006,2010,2014,2018))+
+                 scale_y_continuous(name = "Total Weeks Missed Due to Injury")
+               h3 <- h2 + theme_bw() + 
+                 theme(axis.text=element_text(size=24, colour="black"), 
+                       axis.title=element_text(size=24,face="bold")) +
+                 theme(strip.text.x = element_text(size = 23))+
+                 theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
+                 theme(axis.title.y = element_text(margin = margin(t = 0, r = 30, b = 0, l = 15)))+
+                 theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 10, l = 0)))+
+                 theme(legend.text = element_text(size = 23))+
+                 theme(legend.title = element_blank())+
+                 theme(legend.position = c(0.16,0.85))
+               h4 <- h3+scale_linetype_discrete(name=element_blank(),
+                                                labels = c("Low Grit",
+                                                           "High Grit"))+
+                 scale_color_manual(name = element_blank(),
+                                      labels = c("Austria",
+                                                 "United States"),
+                                      values = c("black",
+                                                 "grey"))
+                 
+               
+               plot(h4) 
+               
+               
+   #-------------------------------------Performance and Psych---------------------------------------------
+               
+               head(TECH)
+              
+              
+               
+               #Performance trends for subset without psych
+               tech01<-lmer(FIS_TECH~
+                              # Fixed-effects
+                              1+year2019+mean_HOURS_TOTAL+
+                              Rel_Age+
+                              Gender+
+                              year2019*Country+
+                              # Random-effects
+                              (1|subID), data=TECH, REML=FALSE)
+               
+               summary(tech01)
+               
+               tech01<-lmer(FIS_SPD~
+                              # Fixed-effects
+                              1+year2019*mean_HOURS_TOTAL+
+                              Rel_Age+
+                              Gender+
+                              year2019*Country+
+                              # Random-effects
+                              (1|subID), data=SPD, REML=FALSE)
+               
+               summary(tech01)
+               
+               
+               # NAT_TECH by Psych (still using subsets) ------------------------------------------------------------
+               
+               tech01<-lmer(FIS_TECH~
+                              # Fixed-effects
+                              1+year2019+mean_HOURS_TOTAL+
+                              Rel_Age+
+                              Gender+
+                              year2019*SMTQ_total*Country+
+                              # Random-effects
+                              (1+year2019|subID), data=TECH, REML=FALSE)
+               
+               summary(tech01)
+               
+               tech01<-lmer(FIS_TECH~
+                              # Fixed-effects
+                              1+year2019+mean_HOURS_TOTAL+
+                              Rel_Age+
+                              Gender+
+                              year2019*SMTQ_Constancy*Country+
+                              # Random-effects
+                              (1+year2019|subID), data=TECH, REML=FALSE)
+               
+               summary(tech01)
+               
+               tech01<-lmer(FIS_TECH~
+                              # Fixed-effects
+                              1+year2019+mean_HOURS_TOTAL+
+                              Rel_Age+
+                              Gender+
+                              year2019*SMTQ_Control*Country+
+                              # Random-effects
+                              (1|subID), data=TECH, REML=FALSE)
+               
+               summary(tech01)
+               
+               tech01<-lmer(FIS_TECH~
+                              # Fixed-effects
+                              1+year2019+mean_HOURS_TOTAL+
+                              Rel_Age+
+                              Gender+
+                              year2019*SMTQ_Confidence*Country+
+                              # Random-effects
+                              (1|subID), data=TECH, REML=FALSE)
+               
+               summary(tech01)
+               
+               #More mental toughness improves rank in 2018
+               
+               tech01<-lmer(FIS_TECH~
+                              # Fixed-effects
+                              1+year2019+mean_HOURS_TOTAL+
+                              Rel_Age+
+                              Gender+
+                              year2019*Grit*Country+
+                              # Random-effects
+                              (1|subID), data=TECH, REML=FALSE)
+               
+               summary(tech01)
+               
+               g1<-ggplot(SPD)+
+                 geom_smooth(method = "lm", mapping =  aes(x = Year, y = FIS_SPD, linetype = Country), se = FALSE)+
+                 facet_wrap(~CFQ_Problem.Focused<3)
+               g2<-g1+scale_x_continuous(name = "Years", breaks = c(2002,2010,2018)) +
+                 scale_y_continuous(name = "Yearly Total Hours (in 100s of Hours)")
+               g3 <- g2 + theme_bw() + 
+                 theme(axis.text=element_text(size=14, colour="black"), 
+                       axis.title=element_text(size=14,face="bold")) +
+                 theme(strip.text.x = element_text(size = 18))+
+                 theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
+                 theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 15)))+
+                 theme(axis.title.x = element_text(margin = margin(t = 15, r = 0, b = 10, l = 0)))+
+                 theme(legend.position = c(0.9,0.1))+
+                 theme(legend.title = element_blank())+
+                 theme(legend.text = element_text(size = 10))+
+                 theme(plot.title = element_blank())+
+                 theme(panel.spacing = unit(1, "lines"))
+               g4 <- g3+scale_linetype_discrete(name=element_blank(),
+                                                labels = c("Austrian",
+                                                           "US"))         
+               
+               plot(g4)
+               
+               #Perfectionism and Performance--------------------------------------
+               tech03<-lmer(FIS_TECH~
+                              # Fixed-effects
+                              1+year2019+mean_HOURS_TOTAL+
+                              Rel_Age+
+                              Gender+
+                              year2019*MPS_PersonalStandards*Country+
+                              # Random-effects
+                              (1|subID), data=TECH, REML=FALSE)
+               
+               summary(tech03)
+               
+               tech04<-lmer(FIS_TECH~
+                              # Fixed-effects
+                              1+year2019+mean_HOURS_TOTAL+
+                              Rel_Age+
+                              Gender+
+                              year2019*MPS_ConcernMistakes*Country+
+                              # Random-effects
+                              (1|subID), data=TECH, REML=FALSE)
+               
+               summary(tech04)
+               
+               tech05<-lmer(FIS_TECH~
+                              # Fixed-effects
+                              1+year2019+mean_HOURS_TOTAL+
+                              Rel_Age+
+                              Gender+
+                              year2019*MPS_CoachPressure*Country+
+                              # Random-effects
+                              (1|subID), data=TECH, REML=FALSE)
+               
+               summary(tech05)
+               
+               tech06<-lmer(FIS_TECH~
+                              # Fixed-effects
+                              1+year2019+mean_HOURS_TOTAL+
+                              Rel_Age+
+                              Gender+
+                              year2019*MPS_ParentalPressure*Country+
+                              # Random-effects
+                              (1|subID), data=TECH, REML=FALSE)
+               
+               summary(tech06)
+               
+               tech07<-lmer(FIS_TECH~
+                              # Fixed-effects
+                              1+year2019+mean_HOURS_TOTAL+
+                              Rel_Age+
+                              Gender+
+                              year2019*MPS_DoubtsActions*Country+
+                              # Random-effects
+                              (1|subID), data=TECH, REML=FALSE)
+               
+               summary(tech07)
+               
+               tech08<-lmer(FIS_TECH~
+                              # Fixed-effects
+                              1+year2019+mean_HOURS_TOTAL+
+                              Rel_Age+
+                              Gender+
+                              year2019*MPS_Organization*Country+
+                              # Random-effects
+                              (1|subID), data=TECH, REML=FALSE)
+               
+               summary(tech08)
+               
+               
+               #Burnout and Performance---------------------
+               tech09<-lmer(FIS_TECH~
+                              # Fixed-effects
+                              1+year2019+mean_HOURS_TOTAL+
+                              Rel_Age+
+                              Gender+
+                              year2019*ABQ_reduced_sense_accomplishment*Country+
+                              # Random-effects
+                              (1|subID), data=TECH, REML=FALSE)
+               
+               summary(tech09)
+               
+               tech10<-lmer(FIS_TECH~
+                              # Fixed-effects
+                              1+year2019+mean_HOURS_TOTAL+
+                              Rel_Age+
+                              Gender+
+                              year2019*ABQ_emotion_physical_exhaustion*Country+
+                              # Random-effects
+                              (1|subID), data=TECH, REML=FALSE)
+               
+               summary(tech10)
+               
+               tech11<-lmer(FIS_TECH~
+                              # Fixed-effects
+                              1+year2019+mean_HOURS_TOTAL+
+                              Rel_Age+
+                              Gender+
+                              year2019*ABQ_Devaluation*Country+
+                              # Random-effects
+                              (1|subID), data=TECH, REML=FALSE)
+               
+               summary(tech11)
+               
+               
+               #Coping and Performance
+               head(TECH)
+               tech12<-lmer(FIS_TECH~
+                              # Fixed-effects
+                              1+year2019+mean_HOURS_TOTAL+
+                              Rel_Age+
+                              Gender+
+                              year2019*CFQ_Problem.Focused*Country+
+                              # Random-effects
+                              (1|subID), data=TECH, REML=FALSE)
+               
+               summary(tech12)
+               
+               tech12<-lmer(FIS_TECH~
+                              # Fixed-effects
+                              1+year2019+mean_HOURS_TOTAL+
+                              Rel_Age+
+                              Gender+
+                              year2019*CFQ_Emotion.Focused*Country+
+                              # Random-effects
+                              (1+year2019|subID), data=TECH, REML=FALSE)
+               
+               summary(tech12)
+               
+               tech12<-lmer(FIS_TECH~
+                              # Fixed-effects
+                              1+year2019+mean_HOURS_TOTAL+
+                              Rel_Age+
+                              Gender+
+                              year2019*CFQ_Avoidance.Coping*Country+
+                              # Random-effects
+                              (1|subID), data=TECH, REML=FALSE)
+               
+               summary(tech12)
+               #Problem-Focused coping is associated with better performance in 2018
+               
+               
+               
+               ##Speed and Psych-------------------------------------------------------------------------------------------------------------------------------
+               
+               
+               tech01<-lmer(FIS_SPD~
+                              # Fixed-effects
+                              1+year2019+mean_HOURS_TOTAL+
+                              Rel_Age+
+                              Gender+
+                              year2019*SMTQ_total*Country+
+                              # Random-effects
+                              (1|subID), data=SPD, REML=FALSE)
+               
+               summary(tech01)
+               
+               
+               tech01<-lmer(FIS_SPD~
+                              # Fixed-effects
+                              1+year2019+mean_HOURS_TOTAL+
+                              Rel_Age+
+                              Gender+
+                              year2019*SMTQ_Constancy*Country+
+                              # Random-effects
+                              (1+year2019|subID), data=SPD, REML=FALSE)
+               
+               summary(tech01)
+               
+               tech01<-lmer(FIS_SPD~
+                              # Fixed-effects
+                              1+year2019+mean_HOURS_TOTAL+
+                              Rel_Age+
+                              Gender+
+                              year2019*SMTQ_Control*Country+
+                              # Random-effects
+                              (1+year2019|subID), data=SPD, REML=FALSE)
+               
+               summary(tech01)
+               
+               tech01<-lmer(FIS_SPD~
+                              # Fixed-effects
+                              1+year2019+mean_HOURS_TOTAL+
+                              Rel_Age+
+                              Gender+
+                              year2019*SMTQ_Confidence*Country+
+                              # Random-effects
+                              (1+year2019|subID), data=SPD, REML=FALSE)
+               
+               summary(tech01)
+               
+               
+               tech02<-lmer(FIS_SPD~
+                              # Fixed-effects
+                              1+year2019+mean_HOURS_TOTAL+
+                              Rel_Age+
+                              Gender+
+                              year2019*Grit*Country+
+                              # Random-effects
+                              (1+year2019|subID), data=SPD, REML=FALSE)
+               
+               summary(tech02)
+               
+               
+               #Perfectionism and Performance
+               tech03<-lmer(FIS_SPD~
+                              # Fixed-effects
+                              1+year2019+mean_HOURS_TOTAL+
+                              Rel_Age+
+                              Gender+
+                              year2019*MPS_PersonalStandards*Country+
+                              # Random-effects
+                              (1|subID), data=SPD, REML=FALSE)
+               
+               summary(tech03)
+               
+               tech04<-lmer(FIS_SPD~
+                              # Fixed-effects
+                              1+year2019+mean_HOURS_TOTAL+
+                              Rel_Age+
+                              Gender+
+                              year2019*MPS_ConcernMistakes*Country+
+                              # Random-effects
+                              (1|subID), data=SPD, REML=FALSE)
+               
+               summary(tech04)
+               
+               tech05<-lmer(FIS_SPD~
+                              # Fixed-effects
+                              1+year2019+mean_HOURS_TOTAL+
+                              Rel_Age+
+                              Gender+
+                              year2019*MPS_CoachPressure*Country+
+                              # Random-effects
+                              (1|subID), data=SPD, REML=FALSE)
+               
+               summary(tech05)
+               
+               tech06<-lmer(FIS_SPD~
+                              # Fixed-effects
+                              1+year2019+mean_HOURS_TOTAL+
+                              Rel_Age+
+                              Gender+
+                              year2019*MPS_ParentalPressure*Country+
+                              # Random-effects
+                              (1+year2019|subID), data=SPD, REML=FALSE)
+               
+               summary(tech06)
+               
+               tech07<-lmer(FIS_SPD~
+                              # Fixed-effects
+                              1+year2019+mean_HOURS_TOTAL+
+                              Rel_Age+
+                              Gender+
+                              year2019*MPS_DoubtsActions*Country+
+                              # Random-effects
+                              (1+year2019|subID), data=SPD, REML=FALSE)
+               
+               summary(tech07)
+               
+               tech08<-lmer(FIS_SPD~
+                              # Fixed-effects
+                              1+year2019+mean_HOURS_TOTAL+
+                              Rel_Age+
+                              Gender+
+                              year2019*MPS_Organization*Country+
+                              # Random-effects
+                              (1+year2019|subID), data=SPD, REML=FALSE)
+               
+               summary(tech08)
+               
+               
+               #Burnout and Performance
+               tech09<-lmer(FIS_SPD~
+                              # Fixed-effects
+                              1+year2019+mean_HOURS_TOTAL+
+                              Rel_Age+
+                              Gender+
+                              year2019*ABQ_Reduced.Sense.of.Accomplishment*Country+
+                              # Random-effects
+                              (1+year2019|subID), data=SPD, REML=FALSE)
+               
+               summary(tech09)
+               
+               tech10<-lmer(FIS_SPD~
+                              # Fixed-effects
+                              1+year2019+mean_HOURS_TOTAL+
+                              Rel_Age+
+                              Gender+
+                              year2019*ABQ_Emotional.Physical.Exhaustion*Country+
+                              # Random-effects
+                              (1|subID), data=SPD, REML=FALSE)
+               
+               summary(tech10)
+               
+               tech11<-lmer(FIS_SPD~
+                              # Fixed-effects
+                              1+year2019+mean_HOURS_TOTAL+
+                              Rel_Age+
+                              Gender+
+                              year2019*ABQ_Devaluation*Country+
+                              # Random-effects
+                              (1|subID), data=SPD, REML=FALSE)
+               
+               summary(tech11)
+               
+               
+               #Coping and Performance
+               head(TECH)
+               tech12<-lmer(FIS_SPD~
+                              # Fixed-effects
+                              1+year2019+mean_HOURS_TOTAL+
+                              Rel_Age+
+                              Gender+
+                              year2019*CFQ_Problem.Focused*Country+
+                              # Random-effects
+                              (1|subID), data=SPD, REML=FALSE)
+               
+               summary(tech12)
+               
+               tech12<-lmer(FIS_SPD~
+                              # Fixed-effects
+                              1+year2019+mean_HOURS_TOTAL+
+                              Rel_Age+
+                              Gender+
+                              year2019*CFQ_Emotion.Focused*Country+
+                              # Random-effects
+                              (1+year2019|subID), data=SPD, REML=FALSE)
+               
+               summary(tech12)
+               
+               tech12<-lmer(FIS_SPD~
+                              # Fixed-effects
+                              1+year2019+mean_HOURS_TOTAL+
+                              Rel_Age+
+                              Gender+
+                              year2019*CFQ_Avoidance.Coping*Country+
+                              # Random-effects
+                              (1|subID), data=SPD, REML=FALSE)
+               
+               summary(tech12)
+               
+               
+   
