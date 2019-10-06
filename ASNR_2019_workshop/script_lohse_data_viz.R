@@ -309,7 +309,7 @@ ggplot(ACQ_BLOCK_AVE, aes(x = block, y = AE)) +
   scale_y_continuous(name = "Absolute Error (ms)") +
   facet_grid(~target)+
   labs(fill = "Group", col="Group")+
-  theme(axis.text.x = element_text(size=10, color="black"),
+  theme(axis.text.x = element_text(size=14, color="black"),
         axis.text.y=element_text(size=14, color="black"), 
         legend.text=element_text(size=14, color="black"),
         legend.title=element_text(size=14, face="bold"),
