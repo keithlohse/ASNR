@@ -12,8 +12,8 @@ head(DAT1)
 ## Regression Coefficients ---- 
 COEFS<-DAT1 %>%
   group_by(group) %>%
-  summarise(Intercept=lm(yVal~xVal, data=DATA)$coefficients[1],
-            Slope=lm(yVal~xVal, data=DATA)$coefficients[2])
+  summarise(Intercept=lm(yVal~xVal, data=DAT1)$coefficients[1],
+            Slope=lm(yVal~xVal, data=DAT1)$coefficients[2])
 COEFS
 
 
@@ -105,6 +105,23 @@ ggplot(DAT2, aes(x = Elevation, y = Effort)) +
         panel.grid.minor = element_blank(),
         strip.text = element_text(size=16, face="bold"),
         legend.position = "none")
+
+# Connect the dots
+head(DAT2)
+ggplot(DAT2, aes(x = Elevation, y = Effort)) +
+  geom_point(aes(fill=Elevation), pch=21, size=2)+
+  #geom_boxplot(fill="white", col="black", outlier.shape = "na",
+  #             alpha=0.4, width=0.5)+
+  geom_line(aes(group=SUBJ))+
+  facet_wrap(~Speed) +
+  scale_y_continuous(name = "Effort (%)", limits = c(0,100)) +
+  theme(axis.text=element_text(size=16, color="black"), 
+        axis.title=element_text(size=16, face="bold"),
+        plot.title=element_text(size=16, face="bold", hjust=0.5),
+        panel.grid.minor = element_blank(),
+        strip.text = element_text(size=16, face="bold"),
+        legend.position = "none") +
+  stat_smooth(aes(group=Speed, lty=Speed), col="blue", lwd=2, se=FALSE)
 
 
 
