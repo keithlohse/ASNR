@@ -1,4 +1,4 @@
-library(ggplot2); library(lme4); library(tidyverse)
+library(ggplot2); library(tidyverse); 
 # By treating this workshop as an R project, we can use relative file paths that
 # allow you to open the data anywhere on any computer, provided you have downloaded 
 # the whole workshop folder.
