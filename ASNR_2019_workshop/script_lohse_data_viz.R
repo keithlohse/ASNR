@@ -1,4 +1,4 @@
-library(ggplot2); library(tidyverse); 
+library(ggplot2); library(tidyverse);
 # By treating this workshop as an R project, we can use relative file paths that
 # allow you to open the data anywhere on any computer, provided you have downloaded 
 # the whole workshop folder.
@@ -42,7 +42,7 @@ ggplot(DAT1, aes(x = xVal, y = yVal)) +
 
 
 
-## Categorical Data
+## Disctrete Categorical Data
 DAT2 <- read.csv("./data_FINAL_RATINGS.csv", header = TRUE, sep = ",")
 head(DAT2)
 
@@ -60,6 +60,7 @@ ggplot(MEANS, aes(x = Elevation, y = ave_Effort)) +
   geom_bar(aes(fill=Elevation), stat="identity", width = 0.5)+
   facet_wrap(~Speed) +
   scale_y_continuous(name = "Effort (%)", limits = c(0,100)) +
+  #scale_fill_manual(values=c("#E69F00", "#56B4E9"))+
   theme(axis.text=element_text(size=16, color="black"), 
         axis.title=element_text(size=16, face="bold"),
         plot.title=element_text(size=16, face="bold", hjust=0.5),
@@ -70,9 +71,12 @@ ggplot(MEANS, aes(x = Elevation, y = ave_Effort)) +
 
 # Means with Standard errors
 ggplot(MEANS, aes(x = Elevation, y = ave_Effort)) +
-  geom_bar(aes(fill=Elevation), stat="identity", width = 0.5)+
+  geom_bar(aes(fill=Elevation, col=Elevation), 
+           stat="identity", width = 0.5)+
   geom_errorbar(aes(ymin = ave_Effort-SD/sqrt(N), ymax=ave_Effort+SD/sqrt(N)),
                 width = 0.2)+
+  scale_fill_manual(values=c("#E69F00", "#56B4E9"))+
+  scale_color_manual(values=c("#E69F00", "#56B4E9"))+
   facet_wrap(~Speed) +
   scale_y_continuous(name = "Effort (%)", limits = c(0,100)) +
   theme(axis.text=element_text(size=16, color="black"), 
@@ -88,6 +92,8 @@ ggplot(DAT2, aes(x = Elevation, y = Effort)) +
   geom_point(aes(fill=Elevation), pch=21, size=2,
                position=position_jitter(w=0.2, h=0))+
   facet_wrap(~Speed) +
+  scale_fill_manual(values=c("#E69F00", "#56B4E9"))+
+  scale_color_manual(values=c("#E69F00", "#56B4E9"))+ 
   scale_y_continuous(name = "Effort (%)", limits = c(0,100)) +
   theme(axis.text=element_text(size=16, color="black"), 
         axis.title=element_text(size=16, face="bold"),
@@ -104,6 +110,8 @@ ggplot(DAT2, aes(x = Elevation, y = Effort)) +
   geom_boxplot(fill="white", col="black", outlier.shape = "na",
                alpha=0.4, width=0.5)+
   facet_wrap(~Speed) +
+  scale_fill_manual(values=c("#E69F00", "#56B4E9"))+
+  scale_color_manual(values=c("#E69F00", "#56B4E9"))+  
   scale_y_continuous(name = "Effort (%)", limits = c(0,100)) +
   theme(axis.text=element_text(size=16, color="black"), 
         axis.title=element_text(size=16, face="bold"),
@@ -122,10 +130,10 @@ head(DAT3)
 
 ggplot(DAT2, aes(x = Elevation, y = Effort)) +
   geom_point(aes(fill=Elevation), pch=21, size=2)+
-  #geom_boxplot(fill="white", col="black", outlier.shape = "na",
-  #             alpha=0.4, width=0.5)+
-  geom_line(aes(group=SUBJ), col="grey40")+
+  geom_line(aes(group=SUBJ, lty=Speed), col="grey40")+
   facet_wrap(~Speed) +
+  scale_fill_manual(values=c("#E69F00", "#56B4E9"))+
+  scale_color_manual(values=c("#E69F00", "#56B4E9"))+
   scale_y_continuous(name = "Effort (%)", limits = c(0,100)) +
   theme(axis.text=element_text(size=16, color="black"), 
         axis.title=element_text(size=16, face="bold"),
@@ -134,7 +142,7 @@ ggplot(DAT2, aes(x = Elevation, y = Effort)) +
         strip.text = element_text(size=16, face="bold"),
         legend.position = "none") +
   stat_smooth(aes(group=Speed, lty=Speed), col="black", lwd=2, se=FALSE)+
-  geom_point(data=DAT3, fill="black", shape=21, size=5)
+  geom_point(data=DAT3, aes(fill=Elevation), shape=22, size=5)
 
 
 
@@ -159,10 +167,12 @@ head(ACQ)
 ggplot(data=ACQ, aes(x=target+constant_error))+
   geom_density(aes(col=target_nom, fill=target_nom), alpha=0.4)+
   facet_wrap(~group)+
+  scale_fill_manual(values=c("#000000","#E69F00", "#56B4E9"))+
+  scale_color_manual(values=c("#000000", "#E69F00", "#56B4E9"))+
   scale_x_continuous(name="Time Produced (ms)")+
   scale_y_continuous(name = "Density", limits = c(0,0.003)) +  
   labs(fill = "Target (ms)", col="Target (ms)")+
-  theme(axis.text=element_text(size=16, color="black"), 
+  theme(axis.text=element_text(size=12, color="black"), 
         legend.text=element_text(size=16, color="black"),
         legend.title=element_text(size=16, face="bold"),
         axis.title=element_text(size=16, face="bold"),
@@ -180,28 +190,26 @@ POST$target_nom<-factor(POST$Target.Time)
 POST<-subset(POST, Absolute.Error < 1000)
 
 
-# Plotting all of the data
-ggplot(data=POST, aes(x=target_nom, y=Absolute.Error))+
-  geom_jitter(aes(col=Group), pch=1, position=position_jitterdodge(dodge.width=0.8))+
-  geom_boxplot(aes(col=Group), fill=NA, outlier.shape = NA)
-
-
 # Subsetting into retention and transfer
 RET <- subset(POST, Target.Time == 1500|Target.Time == 1700|Target.Time == 1900)
-TRANS <- subset(POST, Target.Time == 1600|Target.Time == 1800)
 
 # Retention Data
 ggplot(data=RET, aes(x=target_nom, y=Absolute.Error))+
-  geom_jitter(aes(col=Group), pch=1, position=position_jitterdodge(dodge.width=0.8))+
-  geom_boxplot(aes(col=Group), fill=NA, outlier.shape = NA)
+  scale_fill_manual(values=c("#000000","#E69F00", "#56B4E9"))+
+  scale_color_manual(values=c("#000000", "#E69F00", "#56B4E9"))+
+  geom_jitter(aes(group=Group, fill=target_nom), pch=21, position=position_jitterdodge(dodge.width=0.8))+
+  geom_boxplot(aes(lty=Group, col=target_nom), fill="white", 
+               alpha=0.4, outlier.shape = NA)
 
 ggplot(data=RET, aes(x=Target.Time+Constant.Error))+
   geom_density(aes(col=target_nom, fill=target_nom), alpha=0.4)+
   facet_wrap(~Group) +
+  scale_fill_manual(values=c("#000000","#E69F00", "#56B4E9"))+
+  scale_color_manual(values=c("#000000", "#E69F00", "#56B4E9"))+
   scale_x_continuous(name="Time Produced (ms)")+
   scale_y_continuous(name = "Density", limits = c(0,0.003)) +
   labs(fill = "Target (ms)", col="Target (ms)")+
-  theme(axis.text=element_text(size=16, color="black"), 
+  theme(axis.text=element_text(size=12, color="black"), 
         legend.text=element_text(size=16, color="black"),
         legend.title=element_text(size=16, face="bold"),
         axis.title=element_text(size=16, face="bold"),
@@ -239,6 +247,8 @@ ggplot(ACQ_GROUP_AVE, aes(x = block, y = AE)) +
   geom_errorbar(aes(ymin = AE-AE_sd/sqrt(N), ymax=AE+AE_sd/sqrt(N)),
                 width = 0.1)+
   geom_point(aes(fill=group), shape=21, size=2)+
+  scale_fill_manual(values=c("#E69F00", "#56B4E9"))+
+  scale_color_manual(values=c("#E69F00", "#56B4E9"))+
   scale_x_continuous(name = "Block", breaks = c(1,2,3)) +
   scale_y_continuous(name = "Absolute Error (ms)", limits = c(0,250)) +
   labs(fill = "Group", col="Group")+
@@ -256,6 +266,8 @@ head(ACQ)
 ggplot(ACQ, aes(x = trial_total, y = absolute_error , group=subID)) +
   geom_line(aes(col=group), lwd=1)+
   geom_point(aes(fill=group), shape=21, size=2)+
+  scale_fill_manual(values=c("#E69F00", "#56B4E9"))+
+  scale_color_manual(values=c("#E69F00", "#56B4E9"))+  
   scale_x_continuous(name = "Trial") +
   scale_y_continuous(name = "Absolute Error (ms)") +
   facet_wrap(~target, ncol=1)+
@@ -270,9 +282,11 @@ ggplot(ACQ, aes(x = trial_total, y = absolute_error , group=subID)) +
         legend.position = "top")
 
 ggplot(ACQ, aes(x = trial_total, y = absolute_error)) +
-  geom_point(aes(fill=group), shape=21, size=1, alpha=0.5)+
-  stat_smooth(aes(group=group, lty=group), col="black", 
-              method="loess", lwd=2, se=TRUE)+
+  geom_point(aes(fill=group), shape=21, size=1, alpha=0.3)+
+  stat_smooth(aes(group=group, lty=group), col="black", fill="white",
+              method="loess", lwd=1, se=TRUE)+
+  scale_fill_manual(values=c("#E69F00", "#56B4E9"))+
+  scale_color_manual(values=c("#E69F00", "#56B4E9"))+  
   scale_x_continuous(name = "Trial") +
   scale_y_continuous(name = "Absolute Error (ms)") +
   facet_grid(~group+target)+
@@ -305,6 +319,8 @@ ggplot(ACQ_BLOCK_AVE, aes(x = block, y = AE)) +
   geom_line(data=ACQ_GROUP_AVE, aes(col=group), lwd=1)+
   geom_point(data=ACQ_GROUP_AVE, aes(fill=group),
              col="black", shape=21, size=5, alpha=0.5)+
+  scale_fill_manual(values=c("#E69F00", "#56B4E9"))+
+  scale_color_manual(values=c("#E69F00", "#56B4E9"))+
   scale_x_continuous(name = "Block", breaks=c(1,2,3)) +
   scale_y_continuous(name = "Absolute Error (ms)") +
   facet_grid(~target)+
